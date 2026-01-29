@@ -1,3 +1,3 @@
 # Mobile-computing-2026-
 
-jotain turhaa
+Go to master branch instead
