@@ -2,6 +2,7 @@ package com.example.composetutorial
 
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,6 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.provider.MediaStore
+import android.util.Log
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -50,25 +57,29 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import coil3.compose.AsyncImagePainter
+import coil3.compose.rememberAsyncImagePainter
 import com.example.composetutorial.ui.theme.ComposeTutorialTheme
 import kotlinx.serialization.Serializable
+import kotlin.contracts.contract
 
 data class Message(val author: String, val body: String)
 
 @Composable
-fun ConversationScreen(navController: NavController) {
-    NightModeToggle(navController)
+fun ConversationScreen(navController: NavController, db: UserDatabase) {
+    NightModeToggle(navController, db)
 }
 
 @Composable
-fun MessageCard(msg: Message) {
+fun MessageCard(msg: Message, db: UserDatabase) {
     Row(modifier = Modifier.padding(all = 8.dp)){
         Column {
             Spacer(modifier = Modifier.height(20.dp))
             Image(
-                painter = painterResource(R.drawable.nature),
-                contentDescription = "finnish nature",
-
+                ///!!!change later
+                //painter = painterResource(R.drawable.nature),
+                painter = rememberAsyncImagePainter(Uri.parse(db.userDao().getAll().last().profPic)),
+                contentDescription = "description",
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
@@ -86,7 +97,8 @@ fun MessageCard(msg: Message) {
         Column(modifier = Modifier.clickable {isExpanded = !isExpanded}) {
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = msg.author,
+                //!!!change later
+                text = db.userDao().getAll().last().username,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = FontFamily.Monospace
@@ -111,24 +123,23 @@ fun MessageCard(msg: Message) {
 }
 
 @Composable
-fun Conversation(messages: List<Message>) {
+fun Conversation(messages: List<Message>, db: UserDatabase) {
     LazyColumn (modifier = Modifier.padding(vertical = 40.dp)){
         items(messages) { message ->
-            MessageCard(message)
+            MessageCard(message, db)
         }
     }
 }
 
-@Preview
 @Composable
-fun PreviewConversation() {
+fun PreviewConversation(db: UserDatabase) {
     ComposeTutorialTheme {
-        Conversation(SampleData.conversationSample)
+        Conversation(SampleData.conversationSample, db)
     }
 }
 
 @Composable
-fun NightModeToggle(navController: NavController) {
+fun NightModeToggle(navController: NavController, db: UserDatabase) {
     var isNight by remember { mutableStateOf(false) }
     //sets background colours
     val backgroundColor by animateColorAsState(
@@ -146,7 +157,7 @@ fun NightModeToggle(navController: NavController) {
         Spacer( modifier = Modifier.height(50.dp))
 
         //create the conversation
-        PreviewConversation()
+        PreviewConversation(db)
         //create button for night mode
         Image(
             painter = painterResource(R.drawable.simple_moon_icon_png),
@@ -159,25 +170,5 @@ fun NightModeToggle(navController: NavController) {
                 .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                 .clickable{isNight = !isNight}
         )
-    }
-}
-
-
-@Preview(name = "Light mode")
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true,
-    name = "Dark mode"
-)
-
-@Preview
-@Composable
-fun PreviewMessageCard() {
-    ComposeTutorialTheme {
-        Surface {
-            MessageCard(
-                msg = Message("mina", "smth")
-            )
-        }
     }
 }

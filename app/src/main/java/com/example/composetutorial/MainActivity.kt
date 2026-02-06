@@ -2,10 +2,13 @@ package com.example.composetutorial
 
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
@@ -49,7 +52,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Database
+import androidx.room.Delete
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.example.composetutorial.ui.theme.ComposeTutorialTheme
+import com.example.composetutorial.UserDatabase
+import com.example.composetutorial.databaseEntity.User
 import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
@@ -57,23 +72,32 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            NavigationSystem()
+
+             val db = Room.databaseBuilder(
+                applicationContext,
+                UserDatabase::class.java, "profile-database"
+            ).allowMainThreadQueries().build()
+            if (db.userDao().getAll().isNullOrEmpty()) {
+                db.userDao().insertUser(User("default_name", "empty"))
+            }
+            NavigationSystem(db)
         }
     }
 }
 
 @Composable
-fun NavigationSystem() {
+fun NavigationSystem(db: UserDatabase) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "Main_Screen", builder ={
         composable("Main_Screen") {
-            MainScreen(navController)
+            MainScreen(navController, db)
         }
         composable("Conversation_Screen") {
-            ConversationScreen(navController)
+            ConversationScreen(navController, db)
         }
     })
 }
+
 
 
 
