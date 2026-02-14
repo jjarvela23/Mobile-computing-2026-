@@ -1,8 +1,13 @@
 package com.example.composetutorial
 
+import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -47,6 +52,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColor
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -72,7 +78,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
+            CreateNotificationChannel()
              val db = Room.databaseBuilder(
                 applicationContext,
                 UserDatabase::class.java, "profile-database"
@@ -83,6 +89,8 @@ class MainActivity : ComponentActivity() {
             NavigationSystem(db)
         }
     }
+
+
 }
 
 @Composable
@@ -96,6 +104,26 @@ fun NavigationSystem(db: UserDatabase) {
             ConversationScreen(navController, db)
         }
     })
+}
+
+//var builder = NotificationCompat.Builder(this, 7)
+   // .setSmallIcon(R.drawable.nature)
+    //.setContentTitle("title")
+    //.setContentText("Hello")
+    //.setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+private fun CreateNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val name = NotificationConstants.channel_name
+        val descriptionText = NotificationConstants.description
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(NotificationConstants.CHANNEL_ID, name, importance).apply {
+            description = descriptionText
+        }
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
 }
 
 
