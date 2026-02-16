@@ -3,9 +3,15 @@ package com.example.composetutorial
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
+import android.hardware.Sensor
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -52,7 +58,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.graphics.toColor
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -72,14 +80,25 @@ import com.example.composetutorial.ui.theme.ComposeTutorialTheme
 import com.example.composetutorial.UserDatabase
 import com.example.composetutorial.databaseEntity.User
 import kotlinx.serialization.Serializable
+import java.util.jar.Manifest
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), SensorEventListener {
+
+    private lateinit var sensorManager: SensorManager
+    private var mTemp: Sensor? = null
+
+    private lateinit var obj: CreateNotification
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        obj = CreateNotification(applicationContext)
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        mTemp = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
         enableEdgeToEdge()
         setContent {
+
             CreateNotificationChannel()
-             val db = Room.databaseBuilder(
+            val db = Room.databaseBuilder(
                 applicationContext,
                 UserDatabase::class.java, "profile-database"
             ).allowMainThreadQueries().build()
@@ -90,41 +109,61 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    fun NavigationSystem(db: UserDatabase) {
+        val navController = rememberNavController()
+        NavHost(navController = navController, startDestination = "Main_Screen", builder = {
+            composable("Main_Screen") {
+                MainScreen(navController, db)
+            }
+            composable("Conversation_Screen") {
+                ConversationScreen(navController, db)
+            }
+        })
+    }
 
-}
-
-@Composable
-fun NavigationSystem(db: UserDatabase) {
-    val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "Main_Screen", builder ={
-        composable("Main_Screen") {
-            MainScreen(navController, db)
+    @Composable
+    private fun CreateNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = NotificationConstants.channel_name
+            val descriptionText = NotificationConstants.description
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel =
+                NotificationChannel(NotificationConstants.CHANNEL_ID, name, importance).apply {
+                    description = descriptionText
+                }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
-        composable("Conversation_Screen") {
-            ConversationScreen(navController, db)
+        else {
+            print("joitain")
         }
-    })
-}
+    }
 
-//var builder = NotificationCompat.Builder(this, 7)
-   // .setSmallIcon(R.drawable.nature)
-    //.setContentTitle("title")
-    //.setContentText("Hello")
-    //.setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
-private fun CreateNotificationChannel() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val name = NotificationConstants.channel_name
-        val descriptionText = NotificationConstants.description
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(NotificationConstants.CHANNEL_ID, name, importance).apply {
-            description = descriptionText
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        if (accuracy > 3) {
+            Log.d("H", "E")
         }
-        val notificationManager: NotificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
+    }
+
+    override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+        val celcius = event?.values[0]
+        if (celcius != null) {
+            if (celcius >= 32) {
+                obj.ShowNotification(celcius.toInt())
+            }
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        mTemp?.also {
+                temp -> sensorManager.registerListener(this, temp, SensorManager.SENSOR_DELAY_NORMAL)
+        }
     }
 }
+
+
 
 
 
