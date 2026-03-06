@@ -61,7 +61,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColor
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -90,7 +92,16 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var obj: CreateNotification
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        //splash screen
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        //ask permission for camera
+        if(!hasRequiredPermissions()) {
+            ActivityCompat.requestPermissions(
+                this, Camera_permission, 0
+            )
+        }
+        //notification stuff
         obj = CreateNotification(applicationContext)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         mTemp = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
@@ -118,6 +129,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             }
             composable("Conversation_Screen") {
                 ConversationScreen(navController, db)
+            }
+            composable("Camera_Screen") {
+                CameraScreen(applicationContext, navController)
             }
         })
     }
@@ -160,6 +174,21 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         mTemp?.also {
                 temp -> sensorManager.registerListener(this, temp, SensorManager.SENSOR_DELAY_NORMAL)
         }
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return Camera_permission.all {
+            ContextCompat.checkSelfPermission(
+                applicationContext,
+                it
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    companion object {
+        private val Camera_permission = arrayOf(
+            android.Manifest.permission.CAMERA
+        )
     }
 }
 

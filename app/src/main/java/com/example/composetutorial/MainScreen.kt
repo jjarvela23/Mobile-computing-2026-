@@ -2,6 +2,7 @@ package com.example.composetutorial
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -11,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,10 +20,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +41,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.room.Database
+import coil3.request.colorSpace
 import com.example.composetutorial.databaseEntity.User
 
 @Composable
@@ -45,14 +53,14 @@ fun MainScreen(navController: NavController, db: UserDatabase) {
     ) {
 
     }
-    Column (
+    Column(
         Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     )
     {
         Text(text = "Title", style = MaterialTheme.typography.titleLarge)
-        Button(onClick = { navController.navigate("Conversation_Screen")})
+        Button(onClick = { navController.navigate("Conversation_Screen") })
         {
             Text(text = "Go to conversation")
         }
@@ -75,8 +83,9 @@ fun MainScreen(navController: NavController, db: UserDatabase) {
         horizontalAlignment = Alignment.End
     )
     {
-        Button(onClick ={
-            var photo = photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        Button(onClick = {
+            var photo =
+                photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         })
         {
             Text(text = "select profile picture")
@@ -93,15 +102,25 @@ fun MainScreen(navController: NavController, db: UserDatabase) {
             }
         )
         Button(onClick = {
-            db.userDao().insertUser(User( username, uri.toString()))
+            db.userDao().insertUser(User(username, uri.toString()))
         }) {
             Text(text = "Update profile")
         }
-        Button(onClick = { }) { }
+        Button(
+            onClick = { navController.navigate("Camera_Screen") },
+        )
+        {
+            Text(text = "Open camera")
 
+
+        }
     }
+}
 
+@Composable
+fun CameraView() {
 
 }
+
 
 
