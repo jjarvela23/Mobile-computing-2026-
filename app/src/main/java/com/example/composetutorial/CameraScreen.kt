@@ -4,6 +4,7 @@ import android.app.ApplicationErrorReport
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.hardware.BatteryState
 import android.os.BatteryManager
 import android.util.Log
@@ -179,7 +180,19 @@ private fun TakePhoto(context: Context,
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 super.onCaptureSuccess(image)
-                onPhotoTaken(image.toBitmap())
+                val matrix = Matrix().apply {
+                    postRotate(image.imageInfo.rotationDegrees.toFloat())
+                }
+                val rotatedBitmap = Bitmap.createBitmap(
+                    image.toBitmap(),
+                    0,
+                    0,
+                    image.width,
+                    image.height,
+                    matrix,
+                    true
+                )
+                onPhotoTaken(rotatedBitmap)
             }
 
             override fun onError(exception: ImageCaptureException) {
