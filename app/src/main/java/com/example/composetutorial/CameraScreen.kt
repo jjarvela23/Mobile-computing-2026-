@@ -1,12 +1,18 @@
 package com.example.composetutorial
 
+import android.app.ApplicationErrorReport
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.hardware.BatteryState
+import android.os.BatteryManager
 import android.util.Log
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.ZoomState
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.background
@@ -33,22 +39,37 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.solver.state.helpers.AlignHorizontallyReference
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import org.intellij.lang.annotations.JdkConstants
+import java.time.temporal.ValueRange
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(context: Context, navController: NavController) {
     val scaffoldState = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
     val controller = remember {
         LifecycleCameraController(context.applicationContext).apply {
             setEnabledUseCases(
@@ -56,11 +77,13 @@ fun CameraScreen(context: Context, navController: NavController) {
             )
         }
     }
+    val viewModel = viewModel<CameraViewModel>()
+    val bitmaps by viewModel.bitmaps.collectAsState()
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 0.dp,
         sheetContent = {
-
+            PhotoBottomSheetContent(bitmaps = bitmaps, modifier = Modifier.fillMaxWidth())
         }
     ) { padding ->
         Box(
@@ -74,6 +97,9 @@ fun CameraScreen(context: Context, navController: NavController) {
                 modifier = Modifier
                     .fillMaxSize()
             )
+            if(ContextCompat.checkSelfPermission(context.applicationContext, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
+                Text("No permission to use camera", modifier = Modifier.align(Alignment.Center))
+            }
             //button for flipping camera
             IconButton(
                 onClick = {controller.cameraSelector =
@@ -100,6 +126,13 @@ fun CameraScreen(context: Context, navController: NavController) {
                 )
             }
 
+            var sliderPosition by remember { mutableStateOf(0.0f) }
+            Slider(value = sliderPosition, onValueChange = {sliderPosition = it}, valueRange = 0.0f..1.0f, modifier = Modifier
+                .padding(46.dp),
+                enabled = true,
+                onValueChangeFinished = {controller.cameraControl.setLinearZoom(sliderPosition)})
+
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -110,7 +143,9 @@ fun CameraScreen(context: Context, navController: NavController) {
                 //gallery
                 IconButton(
                     onClick =  {
-
+                        scope.launch {
+                            scaffoldState.bottomSheetState.expand()
+                        }
                     }
                 ) {
                     Icon(
@@ -121,7 +156,7 @@ fun CameraScreen(context: Context, navController: NavController) {
                 //camera
                 IconButton(
                     onClick =  {
-
+                        TakePhoto(context, controller, onPhotoTaken = viewModel::onTakePhoto)
                     }
                 ) {
                     Icon(

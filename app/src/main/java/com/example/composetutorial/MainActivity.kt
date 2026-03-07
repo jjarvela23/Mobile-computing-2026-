@@ -13,6 +13,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -187,7 +188,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     companion object {
         private val Camera_permission = arrayOf(
-            android.Manifest.permission.CAMERA
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.POST_NOTIFICATIONS
         )
     }
 }

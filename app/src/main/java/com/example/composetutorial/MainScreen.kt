@@ -117,10 +117,5 @@ fun MainScreen(navController: NavController, db: UserDatabase) {
     }
 }
 
-@Composable
-fun CameraView() {
-
-}
-
 
 
